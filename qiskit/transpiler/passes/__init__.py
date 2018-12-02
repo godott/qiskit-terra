@@ -9,6 +9,10 @@
 
 from .cx_cancellation import CXCancellation
 from .fixed_point import FixedPoint
+<<<<<<< HEAD
 from .gate_analysis import GateAnalysis
 from .commutation_transformation import CommutationTransformation
 from .commutation_analysis import CommutationAnalysis
+=======
+from .check_map import CheckMap
+>>>>>>> f38d392c0500042ad79584b21c2716027012e330
