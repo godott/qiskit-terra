@@ -28,7 +28,6 @@ class FixedPoint(AnalysisPass):
         if self.property_set['fixed_point'] is None:
             self.property_set['fixed_point'] = defaultdict(lambda: False)
         
-        print("previous_value", self._previous_value)
 
         current_value = self.property_set[self._property]
 
@@ -36,4 +35,3 @@ class FixedPoint(AnalysisPass):
             self.property_set['fixed_point'][self._property] = self._previous_value == current_value
 
         self._previous_value = current_value
-        print("current value", current_value)

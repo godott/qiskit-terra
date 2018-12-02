@@ -15,12 +15,9 @@ Two quantum circuit drawers based on:
     1. LaTeX
     2. Matplotlib
 """
-<<<<<<< HEAD
 import json
-=======
 
 import errno
->>>>>>> f38d392c0500042ad79584b21c2716027012e330
 import logging
 import os
 import subprocess
@@ -187,9 +184,7 @@ def circuit_drawer(circuit,
             `reverse_bits` kwarg instead.
 
     """
-<<<<<<< HEAD
     im = None
-=======
     image = None
     if style:
         if 'reversebits' in style:
@@ -203,7 +198,6 @@ def circuit_drawer(circuit,
                           '``plot_barriers`` kwarg.', DeprecationWarning)
             plot_barriers = style.get('plotbarrier')
 
->>>>>>> f38d392c0500042ad79584b21c2716027012e330
     if not output:
         warnings.warn('The current behavior for the default output will change'
                       ' in a future release. Instead of trying latex and '
