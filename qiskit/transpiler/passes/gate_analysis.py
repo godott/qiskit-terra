@@ -6,5 +6,4 @@ class GateAnalysis(AnalysisPass):
         super().__init__()
 
     def run(self, dag):
-
         self.property_set['gate_count'] = dag.multi_graph.number_of_nodes()
