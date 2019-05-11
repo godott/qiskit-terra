@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """
 Barrier instruction.
@@ -25,6 +32,9 @@ class Barrier(Instruction):
         """Special case. Return self."""
         return Barrier(self.num_qubits)
 
+    def broadcast_arguments(self, qargs, cargs):
+        yield [qarg for sublist in qargs for qarg in sublist], []
+
 
 def barrier(self, *qargs):
     """Apply barrier to circuit.
@@ -39,11 +49,14 @@ def barrier(self, *qargs):
                 qubits.append((qreg, j))
 
     for qarg in qargs:
-        if isinstance(qarg, (QuantumRegister, list)):
-            if isinstance(qarg, QuantumRegister):
-                qubits.extend([(qarg, j) for j in range(qarg.size)])
-            else:
-                qubits.extend(qarg)
+        if isinstance(qarg, QuantumRegister):
+            qubits.extend([(qarg, j) for j in range(qarg.size)])
+        elif isinstance(qarg, list):
+            qubits.extend(qarg)
+        elif isinstance(qarg, range):
+            qubits.extend([i for i in qarg])
+        elif isinstance(qarg, slice):
+            qubits.extend(self.qubits[qarg])
         else:
             qubits.append(qarg)
 

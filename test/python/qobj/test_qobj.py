@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 
 """Qobj tests."""
@@ -13,15 +20,14 @@ import uuid
 
 import jsonschema
 
-from qiskit import BasicAer
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from qiskit.compiler import assemble_circuits, RunConfig
+from qiskit.compiler import assemble
 from qiskit.providers.basicaer import basicaerjob
 
 from qiskit.qobj import (QasmQobj, PulseQobj, QobjHeader,
                          PulseQobjInstruction, PulseQobjExperiment,
                          PulseQobjConfig, QobjMeasurementOption,
-                         QobjPulseLibrary, QasmQobjInstruction,
+                         PulseLibraryItem, QasmQobjInstruction,
                          QasmQobjExperiment, QasmQobjConfig)
 from qiskit.qobj import validate_qobj_against_schema
 from qiskit.validation.jsonschema.exceptions import SchemaValidationError
@@ -120,8 +126,7 @@ class TestQASMQobj(QiskitTestCase):
         qc1.measure(qr, cr)
         qc2.measure(qr, cr)
         circuits = [qc1, qc2]
-        backend = BasicAer.get_backend('qasm_simulator')
-        qobj1 = assemble_circuits(circuits, RunConfig(backend=backend, shots=1024, seed=88))
+        qobj1 = assemble(circuits, shots=1024, seed=88)
         qobj1.experiments[0].config.shots = 50
         qobj1.experiments[1].config.shots = 1
         self.assertTrue(qobj1.experiments[0].config.shots == 50)
@@ -141,7 +146,7 @@ class TestPulseQobj(QiskitTestCase):
                                    memory_slot_size=8192,
                                    meas_return='avg',
                                    pulse_library=[
-                                       QobjPulseLibrary(name='pulse0',
+                                       PulseLibraryItem(name='pulse0',
                                                         samples=[0.0 + 0.0j,
                                                                  0.5 + 0.0j,
                                                                  0.0 + 0.0j])
@@ -180,8 +185,7 @@ class TestPulseQobj(QiskitTestCase):
                                          ],
                        'qubit_lo_freq': [4.9],
                        'meas_lo_freq': [6.9],
-                       'rep_time': 1000
-                       },
+                       'rep_time': 1000},
             'experiments': [
                 {'instructions': [
                     {'name': 'pulse0', 't0': 0, 'ch': 'd0'},
@@ -217,7 +221,7 @@ class TestPulseQobj(QiskitTestCase):
                                 memory_slot_size=8192,
                                 meas_return='avg',
                                 pulse_library=[
-                                    QobjPulseLibrary(name='pulse0', samples=[0.1 + 0.0j])
+                                    PulseLibraryItem(name='pulse0', samples=[0.1 + 0.0j])
                                 ],
                                 qubit_lo_freq=[4.9], meas_lo_freq=[6.9],
                                 rep_time=1000),
@@ -227,10 +231,10 @@ class TestPulseQobj(QiskitTestCase):
                  'pulse_library': [{'name': 'pulse0', 'samples': [[0.1, 0.0]]}],
                  'qubit_lo_freq': [4.9],
                  'meas_lo_freq': [6.9],
-                 'rep_time': 1000}
+                 'rep_time': 1000},
             ),
-            QobjPulseLibrary: (
-                QobjPulseLibrary(name='pulse0', samples=[0.1 + 0.0j]),
+            PulseLibraryItem: (
+                PulseLibraryItem(name='pulse0', samples=[0.1 + 0.0j]),
                 {'name': 'pulse0', 'samples': [[0.1, 0.0]]}
             ),
             PulseQobjExperiment: (

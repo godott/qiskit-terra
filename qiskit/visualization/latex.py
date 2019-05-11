@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
-# pylint: disable=invalid-name,anomalous-backslash-in-string,missing-docstring
-# pylint: disable=consider-using-enumerate
+# pylint: disable=invalid-name
 
 """latex circuit visualization backends."""
 
@@ -18,10 +24,10 @@ import math
 import operator
 import re
 
+from pylatexenc.latexencode import utf8tolatex
 import numpy as np
-
-from qiskit.visualization import exceptions
 from qiskit.visualization import qcstyle as _qcstyle
+from qiskit.visualization import exceptions
 
 
 class QCircuitImage:
@@ -49,7 +55,7 @@ class QCircuitImage:
                circuit. Defaults to True.
         """
         # style sheet
-        self._style = _qcstyle.QCStyle()
+        self._style = _qcstyle.BWStyle()
         if style:
             if isinstance(style, dict):
                 self._style.set_style(style)
@@ -214,6 +220,18 @@ class QCircuitImage:
         """
 
         max_column_widths = []
+        # Determine row spacing before image depth
+        for layer in self.ops:
+            for op in layer:
+                # useful information for determining row spacing
+                boxed_gates = ['u0', 'u1', 'u2', 'u3', 'x', 'y', 'z', 'h', 's',
+                               'sdg', 't', 'tdg', 'rx', 'ry', 'rz', 'ch', 'cy',
+                               'crz', 'cu3', 'id']
+                target_gates = ['cx', 'ccx']
+                if op.name in boxed_gates:
+                    self.has_box = True
+                if op.name in target_gates:
+                    self.has_target = True
 
         for layer in self.ops:
 
@@ -298,7 +316,6 @@ class QCircuitImage:
         the current qubits in the circuit to new qubit names.
         We will deduce the register names and sizes from aliases.
         """
-        columns = 1
 
         # Rename qregs if necessary
         if aliases:
@@ -377,7 +394,8 @@ class QCircuitImage:
                                 self._latex[pos_1][column] = "\\gate{R_z(%s)}" % (
                                     op.op.params[0])
                             else:
-                                self._latex[pos_1][columns] = "\\gate{%s}" % nm
+                                self._latex[pos_1][column] = (
+                                    "\\gate{%s}" % utf8tolatex(nm))
 
                             gap = pos_2 - pos_1
                             for i in range(self.cregs[if_reg]):
@@ -436,7 +454,8 @@ class QCircuitImage:
                                     "\\push{\\rule{.6em}{0em}\\ket{0}\\"
                                     "rule{.2em}{0em}} \\qw")
                             else:
-                                self._latex[pos_1][columns] = "\\gate{%s}" % nm
+                                self._latex[pos_1][column] = (
+                                    "\\gate{%s}" % utf8tolatex(nm))
 
                     elif len(qarglist) == 2:
                         pos_1 = self.img_regs[(qarglist[0][0], qarglist[0][1])]
@@ -546,14 +565,17 @@ class QCircuitImage:
                                 stop_pos = max([pos_1, pos_2])
                                 if stop_pos - start_pos >= 2:
                                     delta = stop_pos - start_pos
-                                    self._latex[start_pos][columns] = (
-                                        "\\multigate{%s}{%s}" % (delta, nm))
+                                    self._latex[start_pos][column] = (
+                                        "\\multigate{%s}{%s}" % (
+                                            delta, utf8tolatex(nm)))
                                     for i_pos in range(start_pos + 1, stop_pos + 1):
-                                        self._latex[i_pos][columns] = "\\ghost{%s}" % nm
+                                        self._latex[i_pos][column] = (
+                                            "\\ghost{%s}" % utf8tolatex(nm))
                                 else:
-                                    self._latex[start_pos][columns] = (
-                                        "\\multigate{1}{%s}" % nm)
-                                    self._latex[stop_pos][columns] = "\\ghost{%s}" % nm
+                                    self._latex[start_pos][column] = (
+                                        "\\multigate{1}{%s}" % utf8tolatex(nm))
+                                    self._latex[stop_pos][column] = (
+                                        "\\ghost{%s}" % utf8tolatex(nm))
 
                     elif len(qarglist) == 3:
                         pos_1 = self.img_regs[(qarglist[0][0], qarglist[0][1])]
@@ -635,15 +657,19 @@ class QCircuitImage:
                                 stop_pos = max([pos_1, pos_2, pos_3])
                                 if stop_pos - start_pos >= 3:
                                     delta = stop_pos - start_pos
-                                    self._latex[start_pos][columns] = (
-                                        "\\multigate{%s}{%s}" % (delta, nm))
+                                    self._latex[start_pos][column] = (
+                                        "\\multigate{%s}{%s}" % (
+                                            delta, utf8tolatex(nm)))
                                     for i_pos in range(start_pos + 1, stop_pos + 1):
-                                        self._latex[i_pos][columns] = "\\ghost{%s}" % nm
+                                        self._latex[i_pos][column] = (
+                                            "\\ghost{%s}" % utf8tolatex(nm))
                                 else:
-                                    self._latex[pos_1][columns] = (
-                                        "\\multigate{2}{%s}" % nm)
-                                    self._latex[pos_2][columns] = "\\ghost{%s}" % nm
-                                    self._latex[pos_3][columns] = "\\ghost{%s}" % nm
+                                    self._latex[pos_1][column] = (
+                                        "\\multigate{2}{%s}" % utf8tolatex(nm))
+                                    self._latex[pos_2][column] = (
+                                        "\\ghost{%s}" % utf8tolatex(nm))
+                                    self._latex[pos_3][column] = (
+                                        "\\ghost{%s}" % utf8tolatex(nm))
 
                     elif len(qarglist) > 3:
                         nbits = len(qarglist)
@@ -655,10 +681,12 @@ class QCircuitImage:
                         pos_start = min(pos_array)
                         pos_stop = max(pos_array)
                         delta = pos_stop - pos_start
-                        self._latex[pos_start][columns] = (
-                            "\\multigate{%s}{%s}" % (nbits - 1, nm))
+                        self._latex[pos_start][column] = (
+                            "\\multigate{%s}{%s}" % (
+                                nbits - 1, utf8tolatex(nm)))
                         for pos in range(pos_start + 1, pos_stop + 1):
-                            self._latex[pos][columns] = "\\ghost{%s}" % nm
+                            self._latex[pos][column] = (
+                                "\\ghost{%s}" % utf8tolatex(nm))
 
                 elif op.name == "measure":
                     if (len(op.cargs) != 1

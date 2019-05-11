@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
-
-# pylint: disable=missing-docstring
+# (C) Copyright IBM 2017.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """
-InitializeGate test.
+Initialize test.
 """
 
 import math
@@ -25,7 +30,7 @@ from qiskit.test import QiskitTestCase
 
 
 class TestInitialize(QiskitTestCase):
-    """Qiskit InitializeGate tests."""
+    """Qiskit Initialize tests."""
 
     _desired_fidelity = 0.99
 
@@ -259,22 +264,36 @@ class TestInitialize(QiskitTestCase):
 
     def test_combiner(self):
         """Combining two circuits containing initialize."""
-        desired_vector = [0, 1]
+        desired_vector_1 = [1.0 / math.sqrt(2), 1.0 / math.sqrt(2)]
+        desired_vector_2 = [1.0 / math.sqrt(2), -1.0 / math.sqrt(2)]
         qr = QuantumRegister(1, "qr")
         cr = ClassicalRegister(1, "cr")
         qc1 = QuantumCircuit(qr, cr)
-        qc1.initialize([1.0 / math.sqrt(2), 1.0 / math.sqrt(2)], [qr[0]])
+        qc1.initialize(desired_vector_1, [qr[0]])
 
         qc2 = QuantumCircuit(qr, cr)
-        qc2.initialize([1.0 / math.sqrt(2), -1.0 / math.sqrt(2)], [qr[0]])
+        qc2.initialize(desired_vector_2, [qr[0]])
 
         job = execute(qc1 + qc2, BasicAer.get_backend('statevector_simulator'))
         result = job.result()
         quantum_state = result.get_statevector()
-        fidelity = state_fidelity(quantum_state, desired_vector)
+        fidelity = state_fidelity(quantum_state, desired_vector_2)
         self.assertGreater(
             fidelity, self._desired_fidelity,
             "Initializer has low fidelity {0:.2g}.".format(fidelity))
+
+    def test_equivalence(self):
+        """Test two similar initialize instructions evaluate to equal."""
+        desired_vector = [0.5, 0.5, 0.5, 0.5]
+        qr = QuantumRegister(2, "qr")
+
+        qc1 = QuantumCircuit(qr, name='circuit')
+        qc1.initialize(desired_vector, [qr[0], qr[1]])
+
+        qc2 = QuantumCircuit(qr, name='circuit')
+        qc2.initialize(desired_vector, [qr[0], qr[1]])
+
+        self.assertEqual(qc1, qc2)
 
 
 if __name__ == '__main__':

@@ -5,8 +5,9 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-# pylint: disable=no-member,invalid-name,missing-docstring
+# pylint: disable=invalid-name,missing-docstring
 
+import os
 import tempfile
 import unittest
 
@@ -35,6 +36,7 @@ class TestMatplotlibDrawer(QiskitTestCase):
 
     @unittest.skipIf(not visualization.HAS_MATPLOTLIB,
                      'matplotlib not available.')
+    @unittest.skipIf(os.name == 'nt', 'tempfile fails on appveyor')
     def test_empty_circuit(self):
         qc = QuantumCircuit()
         res = visualization.circuit_drawer(qc, output='mpl')

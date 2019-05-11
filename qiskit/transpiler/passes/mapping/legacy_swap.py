@@ -17,11 +17,10 @@ import numpy as np
 
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.dagcircuit import DAGCircuit
-from qiskit.mapper.exceptions import MapperError
+from qiskit.transpiler.exceptions import TranspilerError
 from qiskit.circuit import QuantumRegister
 
 from qiskit.extensions.standard import SwapGate
-from .barrier_before_final_measurements import BarrierBeforeFinalMeasurements
 
 
 class LegacySwap(TransformationPass):
@@ -48,8 +47,6 @@ class LegacySwap(TransformationPass):
         self.trials = trials
         self.seed = seed
 
-        self.requires.append(BarrierBeforeFinalMeasurements())
-
     def run(self, dag):
         """Map a DAGCircuit onto a CouplingGraph using swap gates.
 
@@ -65,14 +62,17 @@ class LegacySwap(TransformationPass):
             initial_layout.
 
         Raises:
-            MapperError: if there was any error during the mapping or with the
+            TranspilerError: if there was any error during the mapping or with the
                 parameters.
         """
         if dag.width() > self.coupling_map.size():
-            raise MapperError("Not enough qubits in CouplingGraph")
+            raise TranspilerError("Not enough qubits in CouplingGraph")
 
         # Schedule the input circuit
         layerlist = list(dag.layers())
+
+        if self.initial_layout is None and self.property_set["layout"]:
+            self.initial_layout = self.property_set["layout"]
 
         if self.initial_layout is not None:
             # update initial_layout from a user given dict{(regname,idx): (regname,idx)}
@@ -93,11 +93,11 @@ class LegacySwap(TransformationPass):
             for k, v in initial_layout.items():
                 qubit_subset.append(v)
                 if k not in circ_qubits:
-                    raise MapperError("initial_layout qubit %s[%d] not in input "
-                                      "DAGCircuit" % (k[0].name, k[1]))
+                    raise TranspilerError("initial_layout qubit %s[%d] not in input "
+                                          "DAGCircuit" % (k[0].name, k[1]))
                 if v not in coup_qubits:
-                    raise MapperError("initial_layout qubit %s[%d] not in input "
-                                      "CouplingGraph" % (v[0].name, v[1]))
+                    raise TranspilerError("initial_layout qubit %s[%d] not in input "
+                                          "CouplingGraph" % (v[0].name, v[1]))
         else:
             # Supply a default layout
             qubit_subset = [(QuantumRegister(self.coupling_map.size(), 'q'), wire) for wire in
@@ -148,8 +148,8 @@ class LegacySwap(TransformationPass):
 
                     # Give up if we fail again
                     if not success_flag:
-                        raise MapperError("swap_mapper failed: " +
-                                          "layer %d, sublayer %d" % (i, j))
+                        raise TranspilerError("swap_mapper failed: " +
+                                              "layer %d, sublayer %d" % (i, j))
 
                     # If this layer is only single-qubit gates,
                     # and we have yet to see multi-qubit gates,
@@ -232,7 +232,7 @@ class LegacySwap(TransformationPass):
         gates = []
         for layer in layer_partition:
             if len(layer) > 2:
-                raise MapperError("Layer contains >2 qubit gates")
+                raise TranspilerError("Layer contains >2 qubit gates")
             elif len(layer) == 2:
                 gates.append(tuple(layer))
 
@@ -303,7 +303,7 @@ class LegacySwap(TransformationPass):
                             # Compute the objective function
                             new_cost = sum([xi[new_layout[g[0]]][new_layout[g[1]]]
                                             for g in gates])
-                            # Record progress if we succceed
+                            # Record progress if we succeed
                             if new_cost < min_cost:
                                 progress_made = True
                                 min_cost = new_cost

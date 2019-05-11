@@ -10,32 +10,36 @@ Snapshot.
 """
 
 from qiskit.pulse.channels import SnapshotChannel
-from qiskit.pulse.common.interfaces import Instruction
-from qiskit.pulse.common.timeslots import TimeslotOccupancy
-from .pulse_command import PulseCommand
+from .instruction import Instruction
+from .command import Command
 
 
-class Snapshot(PulseCommand, Instruction):
+class Snapshot(Command, Instruction):
     """Snapshot."""
 
-    def __init__(self, label, snap_type):
+    def __init__(self, name: str, snap_type: str):
         """Create new snapshot command.
 
         Args:
-            label (str): Snapshot label which is used to identify the snapshot in the output.
+            name (str): Snapshot name which is used to identify the snapshot in the output.
             snap_type (str): Type of snapshot, e.g., “state” (take a snapshot of the quantum state).
                 The types of snapshots offered are defined in a separate specification
                 document for simulators.
         """
-        super().__init__(duration=0)
-        self.label = label
-        self.type = snap_type
+        self._type = snap_type
         self._channel = SnapshotChannel()
-        self._occupancy = TimeslotOccupancy([])
+        Command.__init__(self, duration=0, name=name)
+        Instruction.__init__(self, self, self._channel, name=name)
+        self._buffer = 0
+
+    @property
+    def type(self) -> str:
+        """Type of snapshot."""
+        return self._type
 
     def __eq__(self, other):
         """Two Snapshots are the same if they are of the same type
-        and have the same label and type.
+        and have the same name and type.
 
         Args:
             other (Snapshot): other Snapshot,
@@ -43,29 +47,17 @@ class Snapshot(PulseCommand, Instruction):
         Returns:
             bool: are self and other equal.
         """
-        if type(self) is type(other) and \
-                self.label == other.label and \
-                self.type == other.type:
+        if (type(self) is type(other) and
+                self.name == other.name and
+                self.type == other.type):
             return True
         return False
 
-    @property
-    def duration(self):
-        return 0
-
-    @property
-    def occupancy(self):
-        return self._occupancy
-
-    @property
-    def command(self) -> 'Snapshot':
-        """Snapshot command. """
+    # pylint: disable=arguments-differ
+    def to_instruction(self):
         return self
-
-    @property
-    def channel(self) -> SnapshotChannel:
-        """Snapshot channel. """
-        return self._channel
+    # pylint: enable=arguments-differ
 
     def __repr__(self):
-        return '%s(%s, %s) >> %s' % (self.__class__.__name__, self.label, self.type, self._channel)
+        return '%s(%s, %s) -> %s' % (self.__class__.__name__, self.name,
+                                     self.type, self.channels)

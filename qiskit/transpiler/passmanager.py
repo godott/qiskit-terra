@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """PassManager class for the transpiler."""
 
 from functools import partial
 from collections import OrderedDict
 from qiskit.dagcircuit import DAGCircuit
+from qiskit.converters import circuit_to_dag, dag_to_circuit
 from .propertyset import PropertySet
 from .basepasses import BasePass
 from .fencedobjs import FencedPropertySet, FencedDAGCircuit
@@ -16,7 +24,7 @@ from .exceptions import TranspilerError
 
 
 class PassManager():
-    """ A PassManager schedules the passes """
+    """A PassManager schedules the passes"""
 
     def __init__(self, passes=None,
                  ignore_requires=None,
@@ -56,7 +64,7 @@ class PassManager():
             self.append(passes)
 
     def _join_options(self, passset_options):
-        """ Set the options of each passset, based on precedence rules:
+        """Set the options of each passset, based on precedence rules:
         passset options (set via ``PassManager.append()``) override
         passmanager options (set via ``PassManager.__init__()``), which override Default.
         .
@@ -114,19 +122,32 @@ class PassManager():
         self.working_list.append(
             FlowController.controller_factory(passes, options, **flow_controller_conditions))
 
-    def run_passes(self, dag):
-        """Run all the passes on a DAG.
+    def reset(self):
+        """ "Resets the pass manager instance """
+        self.valid_passes = set()
+        self.property_set.clear()
+
+    def run(self, circuit):
+        """Run all the passes on a QuantumCircuit
 
         Args:
-            dag (DAGCircuit): DAG circuit to transform via all the registered passes
+            circuit (QuantumCircuit): circuit to transform via all the registered passes
 
         Returns:
-            DAGCircuit: Transformed DAG.
+            QuantumCircuit: Transformed circuit.
         """
+        name = circuit.name
+        dag = circuit_to_dag(circuit)
+        del circuit
+        self.reset()  # Reset passmanager instance before starting
+
         for passset in self.working_list:
             for pass_ in passset:
                 dag = self._do_pass(pass_, dag, passset.options)
-        return dag
+
+        circuit = dag_to_circuit(dag)
+        circuit.name = name
+        return circuit
 
     def _do_pass(self, pass_, dag, options):
         """Do a pass and its "requires".
@@ -176,6 +197,17 @@ class PassManager():
             else:
                 self.valid_passes.intersection_update(set(pass_.preserves))
 
+    def passes(self):
+        """
+        Returns a list structure of the appended passes and its options.
+
+        Returns (list): The appended passes.
+        """
+        ret = []
+        for pass_ in self.working_list:
+            ret.append(pass_.dump_passes())
+        return ret
+
 
 class FlowController():
     """This class is a base class for multiple types of working list. When you iterate on it, it
@@ -184,12 +216,27 @@ class FlowController():
     registered_controllers = OrderedDict()
 
     def __init__(self, passes, options, **partial_controller):
+        self._passes = passes
         self.passes = FlowController.controller_factory(passes, options, **partial_controller)
         self.options = options
 
     def __iter__(self):
         for pass_ in self.passes:
             yield pass_
+
+    def dump_passes(self):
+        """
+        Fetches the passes added to this flow controller.
+
+        Returns (dict): {'options': self.options, 'passes': [passes], 'type': type(self)}
+        """
+        ret = {'options': self.options, 'passes': [], 'type': type(self)}
+        for pass_ in self._passes:
+            if isinstance(pass_, FlowController):
+                ret['passes'].append(pass_.dump_passes())
+            else:
+                ret['passes'].append(pass_)
+        return ret
 
     @classmethod
     def add_flow_controller(cls, name, controller):
@@ -245,15 +292,15 @@ class FlowController():
 
 
 class FlowControllerLinear(FlowController):
-    """ The basic controller run the passes one after the other one. """
+    """The basic controller runs the passes one after the other."""
 
     def __init__(self, passes, options):  # pylint: disable=super-init-not-called
-        self.passes = passes
+        self.passes = self._passes = passes
         self.options = options
 
 
 class DoWhileController(FlowController):
-    """Implements a set of passes in a do while loop. """
+    """Implements a set of passes in a do-while loop."""
 
     def __init__(self, passes, options, do_while=None,
                  **partial_controller):
@@ -273,7 +320,7 @@ class DoWhileController(FlowController):
 
 
 class ConditionalController(FlowController):
-    """Implements a set of passes under certain condition. """
+    """Implements a set of passes under a certain condition."""
 
     def __init__(self, passes, options, condition=None,
                  **partial_controller):

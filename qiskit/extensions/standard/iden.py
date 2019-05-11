@@ -1,29 +1,34 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
-
-# pylint: disable=invalid-name
+# (C) Copyright IBM 2017.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """
 Identity gate.
 """
+import numpy
 from qiskit.circuit import CompositeGate
 from qiskit.circuit import Gate
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import QuantumRegister
-from qiskit.circuit.decorators import _op_expand
 from qiskit.extensions.standard.u3 import U3Gate
 
 
 class IdGate(Gate):
     """Identity gate."""
 
-    def __init__(self):
+    def __init__(self, label=None):
         """Create new Identity gate."""
-        super().__init__("id", 1, [])
+        super().__init__("id", 1, [], label=label)
 
     def _define(self):
         definition = []
@@ -39,8 +44,12 @@ class IdGate(Gate):
         """Invert this gate."""
         return IdGate()  # self-inverse
 
+    def to_matrix(self):
+        """Return a Numpy.array for the Id gate."""
+        return numpy.array([[1, 0],
+                            [0, 1]], dtype=complex)
 
-@_op_expand(1)
+
 def iden(self, q):
     """Apply Identity to q."""
     return self.append(IdGate(), [q], [])

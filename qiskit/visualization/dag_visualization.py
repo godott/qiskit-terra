@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 # pylint: disable=invalid-name
 
@@ -12,7 +19,6 @@ Visualization function for DAG circuit representation.
 """
 
 import sys
-import copy
 from .exceptions import VisualizationError
 
 
@@ -45,10 +51,10 @@ def dag_drawer(dag, scale=0.7, filename=None, style='color'):
         import nxpd
         import pydot  # pylint: disable=unused-import
     except ImportError:
-        raise ImportError("dag_drawer requires nxpd, pydot, and Graphviz. "
-                          "Run 'pip install nxpd pydot', and install graphviz")
+        raise ImportError("dag_drawer requires nxpd and pydot. "
+                          "Run 'pip install nxpd pydot'.")
 
-    G = copy.deepcopy(dag.multi_graph)  # don't modify the original graph attributes
+    G = dag.to_networkx()
     G.graph['dpi'] = 100 * scale
 
     if style == 'plain':
@@ -81,4 +87,9 @@ def dag_drawer(dag, scale=0.7, filename=None, style='color'):
     else:
         show = True
 
-    return nxpd.draw(G, filename=filename, show=show)
+    try:
+        return nxpd.draw(G, filename=filename, show=show)
+    except nxpd.pydot.InvocationException:
+        raise VisualizationError("dag_drawer requires GraphViz installed in the system. "
+                                 "Check https://www.graphviz.org/download/ for details on "
+                                 "how to install GraphViz in your system.")

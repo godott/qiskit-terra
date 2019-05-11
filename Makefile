@@ -1,7 +1,14 @@
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 OS := $(shell uname -s)
 
@@ -38,7 +45,7 @@ env:
 
 # Ignoring generated ones with .py extension.
 lint:
-	pylint -rn qiskit test
+	pylint -j 2 -rn qiskit test
 
 style:
 	pycodestyle --max-line-length=100 qiskit test
@@ -58,9 +65,6 @@ test_recording:
 test_ci:
 	echo "Detected $(NPROCS) CPUs running with $(CONCURRENCY) workers"
 	stestr run --concurrency $(CONCURRENCY)
-
-profile:
-	python3 -m unittest discover -p "profile*.py" -v
 
 coverage:
 	coverage3 run --source qiskit -m unittest discover -s test -q

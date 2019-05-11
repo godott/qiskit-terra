@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 
 """A module for monitoring various qiskit functionality"""
@@ -70,7 +77,7 @@ def job_monitor(job, interval=None, monitor_async=False, quiet=False, output=sys
     Args:
         job (BaseJob): Job to monitor.
         interval (int): Time interval between status queries.
-        monitor_async (bool): Monitor asyncronously (in Jupyter only).
+        monitor_async (bool): Monitor asynchronously (in Jupyter only).
         quiet (bool): If True, do not print status messages.
         output (file): The file like object to write status messages to.
         By default this is sys.stdout.
@@ -91,7 +98,7 @@ def job_monitor(job, interval=None, monitor_async=False, quiet=False, output=sys
             except ImportError:
                 raise ImportError('These functions  need ipywidgets. '
                                   'Run "pip install ipywidgets" before.')
-            from qiskit.tools.jupyter.jupyter_magics import _html_checker  # pylint: disable=C0412
+            from qiskit.tools.jupyter.jupyter_magics import _html_checker
 
             style = "font-size:16px;"
             header = "<p style='{style}'>Job Status: %s </p>".format(

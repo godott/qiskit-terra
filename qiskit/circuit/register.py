@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """
 Base register reference object.
@@ -29,21 +36,31 @@ class Register:
         """Create a new generic register.
         """
 
+        # validate (or cast) size
+        try:
+            size = int(size)
+        except Exception:
+            raise QiskitError("Register size must be castable to an int (%s '%s' was provided)"
+                              % (type(size).__name__, size))
+        if size <= 0:
+            raise QiskitError("Register size must be positive (%s '%s' was provided)"
+                              % (type(size).__name__, size))
+
+        # validate (or cast) name
         if name is None:
             name = '%s%i' % (self.prefix, next(self.instances_counter))
-
-        if not isinstance(name, str):
-            raise QiskitError("The circuit name should be a string "
-                              "(or None for autogenerate a name).")
-
-        test = re.compile('[a-z][a-zA-Z0-9_]*')
-        if test.match(name) is None:
-            raise QiskitError("%s is an invalid OPENQASM register name." % name)
+        else:
+            try:
+                name = str(name)
+            except Exception:
+                raise QiskitError("The circuit name should be castable to a string "
+                                  "(or None for autogenerate a name).")
+            name_format = re.compile('[a-z][a-zA-Z0-9_]*')
+            if name_format.match(name) is None:
+                raise QiskitError("%s is an invalid OPENQASM register name." % name)
 
         self.name = name
         self.size = size
-        if size <= 0:
-            raise QiskitError("register size must be positive")
 
     def __repr__(self):
         """Return the official string representing the register."""
@@ -99,7 +116,7 @@ class Register:
             iterator: an iterator over the bits/qubits of the register, in the
                 form `tuple (Register, int)`.
         """
-        return zip([self]*self.size, range(self.size))
+        return zip([self] * self.size, range(self.size))
 
     def __eq__(self, other):
         """Two Registers are the same if they are of the same type
